@@ -178,7 +178,6 @@ class VideoPlayer:
                 # 检查内容项是否已完成（通过完成标志检测）
                 try:
                     complete_flag = await content_node.locator("span.flagover-icon").count()
-                    self.module_logger.info(f"检测到内容已完成标志{complete_flag}")
                     if complete_flag >= 1:
                         self.module_logger.info("检测到内容已完成标志，视频播放结束")
                         break
