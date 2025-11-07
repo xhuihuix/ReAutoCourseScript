@@ -25,7 +25,19 @@ class MainAsync:
             async with async_playwright() as p:
                 browser = await p.firefox.launch(
                     headless=False,
+                    args=[
+                        "--disable-css-animation",  # 禁用CSS动画
+                        "--disable-animations",  # 禁用所有动画
+                    ],
+                    firefox_user_prefs={
+                        "permissions.default.image": 2,
+                        "ui.prefersReducedMotion": 1,
+                        "toolkit.cosmeticAnimations.enabled": False,  # 禁用工具箱动画
+                        "browser.tabs.animate": False,  # 禁用标签页动画
+                        "browser.download.animateNotifications": False,  # 禁用下载通知动画
+                    }
                 )
+
                 # 分批处理用户
                 total_users = len(users_data)
                 self.module_logger.info(f"总共 {total_users} 个用户，每批处理 {batch_size} 个用户")
