@@ -16,7 +16,7 @@ class LoggerManager:
     @classmethod
     def get_logger(cls, name: str,
                    log_file: Optional[str] = None,
-                   level=logging.INFO,
+                   level=logging.DEBUG,
                    console_level=None,
                    file_level=None) -> logging.Logger:
         """
@@ -24,7 +24,7 @@ class LoggerManager:
 
         :param name: 日志记录器的名称（通常为模块名）
         :param log_file: 日志文件路径（可选）
-        :param level: 日志等级，默认 INFO
+        :param level: 日志等级，默认 DEBUG
         :param console_level: 控制台输出等级（默认与level相同）
         :param file_level: 文件输出等级（默认与level相同）
         :return: 配置好的 logger 对象
@@ -68,51 +68,32 @@ class LoggerManager:
 
     @classmethod
     def get_user_logger(cls, username: str,
-                        level=logging.INFO,
-                        console_level=None,
+                        level=logging.DEBUG,  # 改为DEBUG
+                        console_level=logging.INFO,
                         file_level=None) -> logging.Logger:
         """
         为特定用户创建专属日志记录器
-
-        :param username: 用户名
-        :param level: 日志等级
-        :param console_level: 控制台输出等级
-        :param file_level: 文件输出等级
-        :return: 用户专用 logger 对象
         """
         log_file = f"logs/user/{username}.log"
         return cls.get_logger(f"user.{username}", log_file, level, console_level, file_level)
 
     @classmethod
     def get_module_logger(cls, module_name: str,
-                          level=logging.INFO,
-                          console_level=None,
+                          level=logging.DEBUG,  # 改为DEBUG
+                          console_level=logging.INFO,
                           file_level=None) -> logging.Logger:
         """
         为特定模块创建日志记录器
-
-        :param module_name: 模块名
-        :param level: 日志等级
-        :param console_level: 控制台输出等级
-        :param file_level: 文件输出等级
-        :return: 模块专用 logger 对象
         """
         return cls.get_logger(f"module.{module_name}", level=level, console_level=console_level, file_level=file_level)
 
     @classmethod
     def get_user_module_logger(cls, username: str, module_name: str,
-                               level=logging.INFO,
-                               console_level=None,
+                               level=logging.DEBUG,  # 改为DEBUG
+                               console_level=logging.INFO,
                                file_level=None) -> logging.Logger:
         """
         为特定用户和模块组合创建日志记录器
-
-        :param username: 用户名
-        :param module_name: 模块名
-        :param level: 日志等级
-        :param console_level: 控制台输出等级
-        :param file_level: 文件输出等级
-        :return: 用户模块专用 logger 对象
         """
         log_file = f"logs/user/{username}/{module_name}.log"
         return cls.get_logger(f"user.{username}.{module_name}", log_file, level, console_level, file_level)
