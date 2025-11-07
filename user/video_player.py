@@ -88,7 +88,6 @@ class VideoPlayer:
             content_node: 内容节点
         """
         self.module_logger.info(f"      → 开始播放视频")
-        await asyncio.sleep(random.random() * 2 + 1)
 
         try:
             # 定位div.jwmute元素
@@ -109,6 +108,7 @@ class VideoPlayer:
             except Exception:
                 self.module_logger.info("      → 未找到div.jwmute元素，跳过静音操作")
 
+            await asyncio.sleep(random.random() * 2 + 1)
             # 确保视频开始播放
             await self.ensure_video_playing(video_frame)
 
