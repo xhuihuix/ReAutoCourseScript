@@ -214,11 +214,11 @@ class CourseManager:
 
             await asyncio.sleep(random.random() * 3 + 1)
 
-            if content_type == 'video':
+            if content_type.strip() == 'video':
                 await self.video_player.play_video_content_with_retry(video_frame, content['node'])
-            if content_type == 'doc':
+            if content_type.strip() == 'doc':
                 await self.study_document_content()
-            if content_type == 'test':
+            if content_type.strip() == 'test':
                 await self.start_exam_content()
             else:
                 self.module_logger.info(f"      → 内容类型 {content_type}，暂不支持")
