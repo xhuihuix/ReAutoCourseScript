@@ -121,6 +121,13 @@ def read_user_info(user_config: UserConfig) -> list[UserData]:
                 "10分国家级五分": 10,
                 "5分市级5分国家级": 10,
             }
+        # config_sheet = workbook[workbook.sheetnames[3]]
+        # global_config = get_config()
+        # config_row = list(config_sheet.iter_rows(min_row=2, max_row=3, values_only=True))
+        # global_config.project.user_batch_size = int(config_row[0][1])
+        # global_config.video_play.each_batch = int(config_row[1][1])
+        #
+        # exam_sheet = workbook[workbook.sheetnames[1]]
 
         users_data = []
         # 跳过标题行，从第二行开始读取用户数据

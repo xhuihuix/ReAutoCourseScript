@@ -216,9 +216,9 @@ class CourseManager:
 
             if content_type.strip() == 'video':
                 await self.video_player.play_video_content_with_retry(video_frame, content['node'])
-            if content_type.strip() == 'doc':
+            elif content_type.strip() == 'doc':
                 await self.study_document_content()
-            if content_type.strip() == 'test':
+            elif content_type.strip() == 'test':
                 await self.start_exam_content()
             else:
                 self.module_logger.info(f"      → 内容类型 {content_type}，暂不支持")
