@@ -83,6 +83,11 @@ class CourseManager:
         course_url += "&domain=youxun.webtrn.cn"
 
         await page_obj.goto(course_url)
+
+        if await page_obj.title() == "课程未发布":
+            self.module_logger.error("课程未发布, 请检查该用户能否选择该课程!!!")
+            return
+
         frame_element = await page_obj.wait_for_selector("#learnHelperIframe", state="visible", timeout=30000)
         await asyncio.sleep(random.random() * 3 + 1)
         frame = await  frame_element.content_frame()
@@ -213,6 +218,7 @@ class CourseManager:
             except Exception as e:
                  self.module_logger.error(f"      → 点击 {content_title} 失败：{e}")
 
+            await asyncio.sleep(1)
             if content_type.strip() == 'video':
                 await self.video_player.play_video_content_with_retry(video_frame, content['node'])
             elif content_type.strip() == 'doc':
