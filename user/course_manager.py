@@ -92,7 +92,7 @@ class CourseManager:
         await asyncio.sleep(random.random() * 3 + 1)
         frame = await  frame_element.content_frame()
         await frame.click("a[onclick='closeLearnHelper()']")
-        self.module_logger.info("已经关闭帮助助手页面")
+        self.module_logger.debug("已经关闭帮助助手页面")
         await self.study_course_content(page_obj)
 
     async def study_course_content(self, page_obj: Page):
@@ -214,7 +214,7 @@ class CourseManager:
                 element.click();
                 }""")
                 clicked = True
-                self.module_logger.info(f"      → 点击 {content_title}")
+                self.module_logger.debug(f"      → 点击 {content_title}")
             except Exception as e:
                  self.module_logger.error(f"      → 点击 {content_title} 失败：{e}")
 
@@ -226,7 +226,7 @@ class CourseManager:
             elif content_type.strip() == 'test':
                 await self.start_exam_content()
             else:
-                self.module_logger.info(f"      → 内容类型 {content_type}，暂不支持")
+                self.module_logger.debug(f"      → 内容类型 {content_type}，暂不支持")
                 await asyncio.sleep(random.random() * 3 + 1)
         except Exception as e:
             self.module_logger.error(f"      → 尝试学习 {content_title} 失败：{e}")
@@ -255,7 +255,7 @@ class CourseManager:
             # 检查是否为章节节点
             if await chapter_element.get_attribute("class") == "s_chapter":
                 chapter_title = await chapter_element.get_attribute("title")
-                self.module_logger.info(f"解析章节 {chapter_index}: {chapter_title}")
+                self.module_logger.debug(f"解析章节 {chapter_index}: {chapter_title}")
 
                 # 获取下一节点作为小节列表容器
                 section_list_obj = child_nodes.nth(i + 1)
@@ -272,7 +272,7 @@ class CourseManager:
                     # 检查是否为小节节点
                     if await section_element.get_attribute("class") == "s_section":
                         section_title = await section_element.get_attribute("title")
-                        self.module_logger.info(f"  解析小节 {chapter_index}.{section_index}: {section_title}")
+                        self.module_logger.debug(f"  解析小节 {chapter_index}.{section_index}: {section_title}")
 
                         # 获取下一节点作为内容项列表容器
                         section_wrap_obj = section_list_child_nodes.nth(j + 1)
@@ -297,7 +297,7 @@ class CourseManager:
                             }
 
                             contents.append(content_detail)
-                            self.module_logger.info(
+                            self.module_logger.debug(
                                 f"    解析内容项 {chapter_index}.{section_index}.{content_index}: [{item_type}] {content_title} [{'已完成学习' if complete_state == '1' else '未完成学习'}]")
                             content_index += 1
 
