@@ -202,17 +202,16 @@ class CourseManager:
         content_type = content.get('itemtype', 'unknown')
         clicked = False
         try:
+            await asyncio.sleep(random.random() * 3 + 1)
             try:
-                 await content['node'].evaluate("""element => {
+                await content['node'].evaluate("""element => {
                 element.scrollIntoView({block: 'center'});
                 element.click();
                 }""")
-                 clicked = True
-                 self.module_logger.info(f"      → 点击 {content_title}")
+                clicked = True
+                self.module_logger.info(f"      → 点击 {content_title}")
             except Exception as e:
                  self.module_logger.error(f"      → 点击 {content_title} 失败：{e}")
-
-            await asyncio.sleep(random.random() * 3 + 1)
 
             if content_type.strip() == 'video':
                 await self.video_player.play_video_content_with_retry(video_frame, content['node'])
