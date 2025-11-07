@@ -24,7 +24,7 @@ class MainAsync:
         try:
             async with async_playwright() as p:
                 browser = await p.firefox.launch(
-                    headless=False,
+                    headless=True,
                     args=[
                         "--disable-css-animation",  # 禁用CSS动画
                         "--disable-animations",  # 禁用所有动画
@@ -167,7 +167,7 @@ class MainAsync:
                 task = asyncio.create_task(self.run_user_task(user))
                 tasks.append(task)
                 # 任务启动间隔延迟
-                await asyncio.sleep(random.random() * 5)
+                await asyncio.sleep(random.random() * 5 + 2)
 
             # 等待所有学习任务完成
             results = await asyncio.gather(*tasks, return_exceptions=True)
