@@ -81,16 +81,26 @@ class LoginManager:
         self.session.headers.update(self.get_headers())
 
         cur_login_attempts = 0
+        base_delay = 1  # 基础延迟时间
+
         while cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
             cur_login_attempts += 1
             try:
+                # 计算指数退避延迟
+                delay = base_delay * (2 ** (cur_login_attempts - 1)) + random.random() * 2
+                self.module_logger.info(f"第 {cur_login_attempts} 次登录尝试，等待 {delay:.2f} 秒后执行")
+
                 # 首先访问登录页面，更新cookie参数
                 response = await self.session.get(self.config.web.login_page_url)
                 if response.status != 200:
                     self.module_logger.error(f"访问登录页面失败，状态码: {response.status}")
-                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                    await asyncio.sleep(random.random() * 6 + 1)
-                    continue
+                    if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        self.module_logger.error("达到最大重试次数，登录页面访问失败")
+                        return False
 
                 await asyncio.sleep(random.random() * 2 + 1)
 
@@ -110,11 +120,16 @@ class LoginManager:
                         self.module_logger.info(f"验证码识别结果: {auth_code}")
                     else:
                         self.module_logger.warning(f"获取验证码失败，状态码: {captcha_response.status}")
+                        if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                            await asyncio.sleep(delay)
+                            continue
+                        else:
+                            return False
                 except ClientError as e:
                     self.module_logger.error(f"网络请求验证码时发生错误: {str(e)}")
                     if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
-                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                        await asyncio.sleep(random.random() * 6 + 1)
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
                         continue
                     else:
                         raise
@@ -148,31 +163,32 @@ class LoginManager:
 
                 if response.status != 200:
                     self.module_logger.error(f"登录请求失败，状态码 {response.status}")
-                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                    await asyncio.sleep(random.random() * 6 + 1)
-                    continue
+                    if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        self.module_logger.error("达到最大重试次数，登录请求失败")
+                        return False
 
                 # 检查响应的内容类型
                 try:
-                    # 检查响应的内容类型
                     content_type = response.headers.get('content-type', '').lower()
 
                     if 'application/json' in content_type:
                         result = await response.json()
                     elif 'text/javascript' in content_type:
-                        # 对于text/javascript类型，先获取文本内容再解析JSON
                         text_content = await response.text()
                         result = json.loads(text_content)
                     else:
-                        # 尝试直接获取文本并解析
                         text_content = await response.text()
                         result = json.loads(text_content)
                 except Exception as e:
                     self.module_logger.error(f"解析登录响应JSON失败: {str(e)}")
                     self.module_logger.error(f"响应内容: {await response.text()}")
                     if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
-                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                        await asyncio.sleep(random.random() * 6 + 1)
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
                         continue
                     else:
                         raise
@@ -180,34 +196,53 @@ class LoginManager:
                 if not result.get("success"):
                     error_message = result.get("message", "未知错误")
                     self.module_logger.error(f"登录失败，错误信息: {error_message}")
-                    # 如果是验证码错误，可以重新尝试
+
+                    # 如果是验证码错误，重新获取验证码重试
                     if "验证码" in error_message or "authcode" in error_message.lower():
-                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败, 因验证码失败，正在重新尝试...")
-                        await asyncio.sleep(random.random() * 6 + 1)
+                        self.module_logger.error(
+                            f"第 {cur_login_attempts} 次尝试失败, 因验证码失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
                         continue
-                    elif cur_login_attempts >= self.MAX_LOGIN_ATTEMPTS:
-                        return False  # 其他错误直接返回失败
+                    # 如果是账号密码错误，直接返回失败，不需要重试
+                    elif "密码" in error_message or "password" in error_message.lower():
+                        self.module_logger.error("账号或密码错误，终止重试")
+                        return False
+                    # 其他错误根据剩余尝试次数决定是否重试
+                    elif cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        return False
 
                 # 处理重定向，更新cookie参数
                 redirect_url = result.get("redirectURL") or result.get("RedirectURL")
                 if not redirect_url:
                     self.module_logger.error(f"登录失败，未找到重定向URL")
-                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                    await asyncio.sleep(random.random() * 6 + 1)
-                    continue
+                    if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        self.module_logger.error("达到最大重试次数，未找到重定向URL")
+                        return False
 
                 try:
                     redirect_response = await self.session.get(redirect_url)
                     if redirect_response.status != 200:
                         self.module_logger.error(f"重定向请求失败，状态码 {redirect_response.status}")
-                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                        await asyncio.sleep(random.random() * 6 + 1)
-                        continue
+                        if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
+                            self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                            await asyncio.sleep(delay)
+                            continue
+                        else:
+                            self.module_logger.error("达到最大重试次数，重定向请求失败")
+                            return False
                 except ClientError as e:
                     self.module_logger.error(f"重定向请求时发生网络错误: {str(e)}")
                     if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
-                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                        await asyncio.sleep(random.random() * 6 + 1)
+                        self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                        await asyncio.sleep(delay)
                         continue
                     else:
                         raise
@@ -219,16 +254,16 @@ class LoginManager:
             except ClientError as e:
                 self.module_logger.error(f"网络请求时发生错误: {str(e)}")
                 if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
-                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                    await asyncio.sleep(random.random() * 6 + 1)
+                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                    await asyncio.sleep(delay)
                     continue
                 else:
                     raise
             except Exception as e:
                 self.module_logger.error(f"登录过程中发生未预期的错误: {str(e)}")
                 if cur_login_attempts < self.MAX_LOGIN_ATTEMPTS:
-                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，正在重新尝试...")
-                    await asyncio.sleep(random.random() * 6 + 1)
+                    self.module_logger.error(f"第 {cur_login_attempts} 次尝试失败，{delay:.2f} 秒后重新尝试...")
+                    await asyncio.sleep(delay)
                     continue
                 else:
                     raise
