@@ -21,9 +21,9 @@ class StudyManager:
 
         self.course_manager = CourseManager(self.user_data)
 
-    def init_context(self, context: BrowserContext):
+    async def init_context(self, context: BrowserContext):
         self.context = context
-        self.course_manager.init_context(self.context)
+        await self.course_manager.init_context(self.context)
 
     # 方法
     async def run_study_process(self):

@@ -45,7 +45,7 @@ class UserAsync:
         """
         if not self.login_manager.isLogin:
             await self.initialize()
-        self.study_manager.init_context(self.login_manager.context)
+        await self.study_manager.init_context(self.login_manager.context)
         await self.study_manager.run_study_process()
 
     def is_initialized(self) -> bool:

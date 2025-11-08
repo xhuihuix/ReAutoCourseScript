@@ -26,9 +26,11 @@ class VideoPlayer:
             f"{self.user_data.user_name}_{self.user_data.username}",
             "Video"
         )
+        self.video_end_requests_flag = False
 
-    def init_context(self, context: BrowserContext):
+    async def init_context(self, context: BrowserContext):
         self.context = context
+        await self.context.route("**/*", self.block_resources)
 
     # 方法
     async def play_video_content_with_retry(self, video_frame, content_node):
@@ -123,7 +125,6 @@ class VideoPlayer:
 
         except Exception as e:
             self.module_logger.error(f"      → 处理视频内容时发生错误: {str(e)}")
-            print(f"      用户 {self.user_data.user_name}_{self.user_data.username} 处理视频内容时发生错误: {str(e)}")
             # 重新抛出异常以触发重试机制
             raise e
 
@@ -170,12 +171,17 @@ class VideoPlayer:
         last_report_time = 0
         last_video_time_s = -1  # 初始值设为-1以便第一次比较
         start_time = asyncio.get_event_loop().time()
+        self.video_end_requests_flag = False
 
         while True:
             try:
                 elapsed_time = asyncio.get_event_loop().time() - start_time
 
                 # 检查内容项是否已完成（通过完成标志检测）
+                if self.video_end_requests_flag:
+                    self.module_logger.info("视频已结束，等待内容项完成")
+                    break
+
                 try:
                     complete_flag = await content_node.locator("span.flagover-icon").count()
                     if complete_flag >= 1:
@@ -290,6 +296,22 @@ class VideoPlayer:
             self.module_logger.error(f"恢复视频播放过程中发生异常: {e}")
             return False
 
+    async def block_resources(self, route):
+        url = route.request.url
+
+        # 阻止特定的视频CDN域名或路径模式
+        video_patterns = [
+            "learningTime_endVideoLearning.action"
+        ]
+
+        if any(pattern in url for pattern in video_patterns):
+            self.video_end_requests_flag = True
+            await route.continue_()
+        # 阻止其他不需要的资源类型
+        elif route.request.resource_type in ["image", "media", "font", "video"]:
+            await route.abort()
+        else:
+            await route.continue_()
 
     @staticmethod
     def time_str_to_seconds(time_str):
