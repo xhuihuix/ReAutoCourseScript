@@ -22,9 +22,9 @@ class CourseManager:
 
         self.video_player = VideoPlayer(user_data)
 
-    def init_context(self, context: BrowserContext):
+    async def init_context(self, context: BrowserContext):
         self.context = context
-        self.video_player.init_context(self.context)
+        await self.video_player.init_context(self.context)
 
     async def run_study_course(self):
         unfinished_course = await self.get_unfinished_courses()

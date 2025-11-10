@@ -37,7 +37,6 @@ class LoginManager:
         """
         if os.path.exists(self.login_file):
             self.context = await self.browser.new_context(storage_state=self.login_file)
-            await self.context.route("**/*", self.block_resources)
             await self.context.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {
                     get: () => undefined  // 覆盖为undefined
@@ -303,7 +302,6 @@ class LoginManager:
         """
         # 创建新的context
         self.context = await self.browser.new_context()
-        await self.context.route("**/*", self.block_resources)
         # 注入JS代码，隐藏webdriver标识
         await self.context.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', {
@@ -353,25 +351,21 @@ class LoginManager:
         if self.context:
             await self.context.close()
 
-    @staticmethod
-    async def block_resources(route):
-        url = route.request.url
-
-        # 阻止特定的视频CDN域名或路径模式
-        video_patterns = [
-            # "webtrncdn.com",
-            # "VIDEOSEGMENTS",
-            # ".mp4",
-            # ".flv"
-        ]
-
-        if any(pattern in url for pattern in video_patterns):
-            await route.abort()
-        # 阻止其他不需要的资源类型
-        elif route.request.resource_type in ["image", "media", "font", "video"]:
-            await route.abort()
-        else:
-            await route.continue_()
+    # async def block_resources(self, route):
+    #     url = route.request.url
+    #
+    #     # 阻止特定的视频CDN域名或路径模式
+    #     video_patterns = [
+    #         "learningTime_endVideoLearning.action"
+    #     ]
+    #
+    #     if any(pattern in url for pattern in video_patterns):
+    #         await route.abort()
+    #     # 阻止其他不需要的资源类型
+    #     elif route.request.resource_type in ["image", "media", "font", "video"]:
+    #         await route.abort()
+    #     else:
+    #         await route.continue_()
 
     @staticmethod
     def get_headers() -> dict:
