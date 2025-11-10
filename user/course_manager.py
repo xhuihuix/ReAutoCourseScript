@@ -351,6 +351,57 @@ class CourseManager:
         return []
 
     async def get_unfinished_courses(self) -> list:
+        """
+        仅仅获取必修课程学分, 不包括学分总数要求
+        :return: 需要学习的必修课程列表
+        """""
+        accumulate_credit = 0
+        learn_credit = 0
+        have_learn_course = []
+        unfinished_courses = []
+        if not self.user_data.must_learn_course == "None":
+            for must_course_name in self.user_data.must_learn_course:
+                await asyncio.sleep(random.random() * 2 + 2)
+                course_items = await self.get_learn_course(must_course_name)
+                if not course_items:
+                    self.module_logger.info(f"未找到必修课程 {must_course_name}, 请确认课程名称是否正确")
+                    continue
+
+                course_item = course_items[0]
+                name = course_item.get('name')
+                percent = course_item.get('percent')
+                credit = course_item.get('credit')
+                course_id = course_item.get('id')
+
+                # 检查是否已添加到相应列表中
+                is_in_unfinished = any(i['id'] == course_id for i in unfinished_courses)
+                is_in_learned = any(i['id'] == course_id for i in have_learn_course)
+
+                if not percent or not credit:
+                    continue
+
+                if int(percent) >= 100:
+                    if is_in_learned:
+                        continue
+                    have_learn_course.append(course_item)
+                    accumulate_credit += int(credit)
+                    self.module_logger.info(f"必修课程: {name} 已完成, 学分: {credit}")
+                elif int(percent) < 100:
+                    if is_in_unfinished:
+                        continue
+                    learn_credit += int(credit)
+                    unfinished_courses.append(course_item)
+                    self.module_logger.info(f"必修课程: {name} 未完成, 学分{credit}")
+
+            total_earned_credit = learn_credit + accumulate_credit
+            self.module_logger.info(f"必修课程总计学分: {total_earned_credit}, 已修学分: {accumulate_credit}, 需修学分: {learn_credit}")
+
+            return unfinished_courses
+        else:
+            self.module_logger.error("未找到必修课程, 请确认课程名称是否正确")
+            return unfinished_courses
+
+    async def get_unfinished_courses_contain_credit(self) -> list:
         """获取当前用户未完成课程"""
         accumulate_credit = 0
         learn_credit = 0
