@@ -58,10 +58,7 @@ class AppConfig:
 
 @dataclass
 class UserData:
-    city: str
     user_name: str
-    major: str
-    ic_card: str
     need_credit: int
     username: str
     userpwd: str
@@ -83,7 +80,80 @@ class ConfigLoader:
             account=UserConfig(**config_data["account"])
         )
 
+
 def read_user_info(user_config: UserConfig) -> list[UserData]:
+    """
+    新版本excel读取,数据都被存储在一个sheet里,依次为序号/姓名/账号/密码/指定学习项目
+    :param user_config:
+    :return:
+    """
+    # 检查配置是否有效
+    if not hasattr(user_config, 'file_path') or not user_config.file_path:
+        print("无用户路径信息, 请配置yaml文件")
+        return []
+
+    data_path = user_config.file_path
+
+    # 检查文件是否存在
+    import os
+    if not os.path.exists(data_path):
+        print(f"用户数据文件不存在: {data_path}")
+        return []
+
+    file_suffix = data_path.split(".")[-1].lower()
+
+    if file_suffix in ["xlsx", "xls"]:
+        try:
+            # 使用 openpyxl 读取 xlsx 文件
+            workbook = load_workbook(data_path)
+        except Exception as e:
+            print(f"无法打开Excel文件 {data_path}: {e}")
+            return []
+
+        if len(workbook.sheetnames) >= 1:
+            user_data_sheet = workbook[workbook.sheetnames[0]]
+        else:
+            print("错误：未找到用户数据表")
+            workbook.close()
+            return []
+
+        users_data = []
+        for row_index, row in enumerate(user_data_sheet.iter_rows(min_row=2, values_only=True), 2):
+            # 跳过空行
+            if not any(cell is not None for cell in row):
+                continue
+
+            # 检查必要字段是否存在
+            if len(row) < 5:
+                print(f"警告：第{row_index}行数据不完整，跳过该行")
+                continue
+
+            # 处理用户名为空的情况
+            username = row[2]
+            if not username:
+                print(f"警告：第{row_index}行用户名为空，跳过该行")
+                continue
+
+            try:
+                user = UserData(
+                    user_name=str(row[1]) if row[1] is not None else "",
+                    username=str(username),
+                    userpwd=str(row[3]) if row[3] is not None else "",
+                    need_credit=0,
+                    must_learn_course=str(row[4]).replace("，", ",").replace("\n", "").split(",")
+                    if row[4] is not None else []
+                )
+                users_data.append(user)
+            except Exception as e:
+                print(f"警告：第{row_index}行数据处理出错: {e}，跳过该行")
+
+        workbook.close()
+        return users_data
+    else:
+        print(f"不支持的文件格式: {file_suffix}，请使用xlsx或xls格式")
+        return []
+
+def read_user_info_old(user_config: UserConfig) -> list[UserData]:
     if not hasattr(user_config, 'file_path'):
         print("无用户路径信息, 请配置yaml文件")
         return []
