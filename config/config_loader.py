@@ -35,6 +35,10 @@ class QrCodeConfig:
 class VideoPlayConfig:
     class_id: str
     each_batch: int
+    check_freq_s: int = 5
+    report_freq_s: int = 300
+    max_stuck_checks: int = 3
+
 
 
 @dataclass

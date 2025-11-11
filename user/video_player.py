@@ -14,9 +14,9 @@ class VideoPlayer:
     RECOVER_MAX_TRY = 3     # 恢复视频播放失败最大尝试次数
     VIDEO_MAX_RETRY = 3     # 视频学习失败重试次数
 
-    CHECK_FREQ_S = 5        # 视频检查频率(秒)
-    REPORT_FREQ_S = 600     # 汇报频率(秒)
-    MAX_STUCK_CHECKS = 3    # 最大停顿次数检查次数, 超过该次数认为停顿
+    CHECK_FREQ_S = get_config().video_play.check_freq_s        # 视频检查频率(秒)
+    REPORT_FREQ_S = get_config().video_play.report_freq_s     # 汇报频率(秒)
+    MAX_STUCK_CHECKS = get_config().video_play.max_stuck_checks    # 最大停顿次数检查次数, 超过该次数认为停顿
 
     def __init__(self, user_data: UserData):
         self.config = get_config()
