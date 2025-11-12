@@ -329,7 +329,7 @@ class CourseManager:
             "data": ["course", "detail"],
             "page.curPage": 1,
             "page.pageSize": self.config.video_play.each_batch,
-            "page.searchItem.classId": self.config.video_play.class_id,
+            "page.searchItem.classId": self.user_data.class_id,
             "page.searchItem.status": 0,
             "page.searchItem.labelName": "",
             "page.searchItem.labelCode": "",
@@ -347,6 +347,8 @@ class CourseManager:
             await asyncio.sleep(random.random() * 2)
 
             return items
+        else:
+            self.module_logger.error(f"获取课程信息失败：{response.status}")
 
         return []
 

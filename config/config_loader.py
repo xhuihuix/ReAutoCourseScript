@@ -62,6 +62,7 @@ class AppConfig:
 
 @dataclass
 class UserData:
+    class_id: str
     user_name: str
     need_credit: int
     username: str
@@ -140,6 +141,7 @@ def read_user_info(user_config: UserConfig) -> list[UserData]:
 
             try:
                 user = UserData(
+                    class_id="None",
                     user_name=str(row[1]) if row[1] is not None else "",
                     username=str(username),
                     userpwd=str(row[3]) if row[3] is not None else "",

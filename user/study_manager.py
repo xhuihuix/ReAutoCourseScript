@@ -77,7 +77,8 @@ class StudyManager:
                 page = project_data.get("page", {})
                 items = page.get("items", [])
                 class_id = items[0].get("id", self.config.video_play.class_id)
-                self.config.video_play.class_id = class_id
+                self.user_data.class_id = class_id
+                # self.config.video_play.class_id = class_id
                 return True
             self.module_logger.error("获取项目id失败")
         return False
